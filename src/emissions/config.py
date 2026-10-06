@@ -16,3 +16,7 @@ class Settings(BaseSettings):
     http_timeout_s: float = Field(default=60.0, gt=0)
     http_retries: int = Field(default=3, ge=0, le=10)
     log_level: str = "INFO"
+    cors_origins: list[str] = ["http://localhost:5173"]
+    """Browser origins allowed to call the API, e.g. the deployed frontend."""
+    cors_origin_regex: str | None = None
+    """Optional regex for extra origins, e.g. Vercel preview deployments."""

@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException, Path, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import Connection, Engine, text
 from sqlalchemy.exc import OperationalError
@@ -13,6 +14,7 @@ from emissions import __version__
 from emissions.api.schemas import (
     CountryIndicators,
     CountryOut,
+    CountryYearIndicator,
     EmissionOut,
     Gas,
     IndicatorOut,
@@ -23,6 +25,7 @@ from emissions.api.schemas import (
     SectorOut,
     SectorShareOut,
     SourceOut,
+    YearIndicators,
 )
 from emissions.config import Settings
 from emissions.db.repository import make_engine
@@ -71,6 +74,14 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
         summary="Standardised greenhouse gas indicators for European countries, "
         "built from Eurostat, World Bank and Our World in Data.",
         lifespan=lifespan,
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_origin_regex=settings.cors_origin_regex,
+        allow_methods=["GET"],
+        allow_headers=["*"],
+        max_age=3600,
     )
 
     @app.exception_handler(HTTPException)
@@ -175,6 +186,27 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
             limit=limit,
             offset=offset,
         )
+
+    @app.get("/v1/indicators", tags=["indicators"])
+    def indicators_by_year(
+        conn: Conn,
+        year: Annotated[int | None, Query(ge=1990, le=2100, description="Default: latest")] = None,
+    ) -> YearIndicators:
+        """Headline indicators for every country in one year (for rankings and maps)."""
+        if year is None:
+            year = conn.execute(text("SELECT max(year) FROM mart.country_indicator")).scalar()
+            if year is None:
+                raise HTTPException(404, "no data loaded yet")
+        rows = _rows(
+            conn,
+            """SELECT i.country, c.name, i.year, i.total_ghg_mt, i.emissions_source,
+                      i.population, i.population_source, i.ghg_per_capita_t,
+                      i.change_vs_1990_pct, i.change_vs_prev_year_pct
+               FROM mart.country_indicator i JOIN core.country c ON c.iso2 = i.country
+               WHERE i.year = :y ORDER BY c.name""",
+            y=year,
+        )
+        return YearIndicators(year=year, countries=[CountryYearIndicator(**r) for r in rows])
 
     @app.get("/v1/countries/{code}/indicators", tags=["indicators"])
     def country_indicators(

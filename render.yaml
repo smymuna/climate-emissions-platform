@@ -1,0 +1,17 @@
+# Render blueprint for the API (https://render.com/docs/blueprint-spec).
+# The database is external (Neon, free and persistent); set its URL in the dashboard.
+services:
+  - type: web
+    name: climate-emissions-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: EMISSIONS_DATABASE_URL
+        sync: false # secret: the Neon connection string
+      - key: EMISSIONS_CORS_ORIGINS
+        sync: false # e.g. ["https://climate-emissions.vercel.app"]
+      - key: EMISSIONS_LOG_LEVEL
+        value: INFO

@@ -56,6 +56,16 @@ class IndicatorOut(BaseModel):
     change_vs_prev_year_pct: float | None
 
 
+class CountryYearIndicator(IndicatorOut):
+    country: str
+    name: str
+
+
+class YearIndicators(BaseModel):
+    year: int
+    countries: list[CountryYearIndicator]
+
+
 class CountryIndicators(BaseModel):
     country: CountryOut
     unit: str = "Mt CO2e (total, excl. LULUCF), t CO2e per person"

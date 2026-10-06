@@ -16,6 +16,11 @@ countries, sectors, reporting periods and emissions in PostgreSQL. It keeps ever
 source's raw values and records exactly what was dropped, rejected or flagged in each
 run.
 
+![Dashboard showing Germany's emissions falling from about 1,250 Mt in 1990 to 650 Mt in 2024, a sector breakdown, and a ranking of European countries by change since 1990](docs/dashboard.jpg)
+
+*The React dashboard on real data. It also has a source comparison view, a data-quality
+panel and dark mode.*
+
 ```console
 $ docker compose up --build
 $ curl localhost:8000/v1/countries/DE/indicators?from_year=2024
@@ -104,6 +109,21 @@ $ curl "localhost:8000/v1/reconciliation?year=2022&min_spread_pct=20"
 [{"country": "IE", "eurostat_mt": 59.01, "worldbank_mt": 63.86, "owid_mt": 39.38, "spread_pct": 45.3}, ...]
 ```
 
+## Frontend
+
+`frontend/`: a React + TypeScript dashboard (Vite, TanStack Query). See
+[frontend/README.md](frontend/README.md).
+
+- Pick a country to see its total and per-capita emissions, change since 1990 and vs the previous
+  year, and a sector breakdown. A ranking shows every country's change since 1990.
+- **Compare all three sources** overlays Eurostat, World Bank and OWID for one country,
+  which makes the method differences visible.
+- The data-quality panel shows the latest ingestion runs and where sources disagree.
+- Charts are plain SVG components with hover and keyboard tooltips, a data-table view
+  for each chart, and dark mode. The source colours were checked for colour-vision
+  deficiency in both themes.
+- The view is in the URL (`?country=FR`), so links can be shared.
+
 ## API
 
 OpenAPI docs at `/docs`. Errors use RFC 9457 `application/problem+json`.
@@ -147,9 +167,41 @@ owid       run 3: parsed  26649  dropped  23289  rejected    0  loaded   3360  (
 
 Running `ingest` again reports `+0 new, 0 changed`: loads are idempotent.
 
+## Deployment
+
+Free-tier hosting, all in the EU where possible:
+
+```mermaid
+flowchart LR
+    U[Browser] --> V[Vercel<br/>React frontend]
+    V -->|HTTPS, CORS| R[Render, Frankfurt<br/>FastAPI Docker image]
+    R --> N[(Neon PostgreSQL<br/>eu-central-1)]
+    G[GitHub Actions<br/>monthly ingest] --> N
+```
+
+| Piece | Where | Config |
+|---|---|---|
+| Database | [Neon](https://neon.tech), free plan | Connection string → secret `EMISSIONS_DATABASE_URL` |
+| Data refresh | GitHub Actions | [`.github/workflows/ingest.yml`](.github/workflows/ingest.yml): runs migrations + ingestion monthly or on demand |
+| API | [Render](https://render.com), free web service | [`render.yaml`](render.yaml) blueprint, Docker, health check on `/healthz` |
+| Frontend | [Vercel](https://vercel.com), free plan | Root directory `frontend`, env `VITE_API_URL` = the Render URL |
+
+Setup, in order:
+
+1. **Neon:** create a project (region Frankfurt) and copy the connection string.
+2. **GitHub:** add it as the repository secret `EMISSIONS_DATABASE_URL`, then run the
+   *Ingest* workflow from the Actions tab. It creates the schema and loads the data.
+3. **Render:** *New → Blueprint*, pick this repository, and set `EMISSIONS_DATABASE_URL`
+   (same string) and `EMISSIONS_CORS_ORIGINS` (for example `["https://<your-app>.vercel.app"]`).
+4. **Vercel:** import the repository, set the root directory to `frontend` and
+   `VITE_API_URL` to the Render URL, then deploy.
+
+The free Render plan sleeps after 15 minutes without traffic. The first request then
+takes up to a minute, and the frontend shows a message while the API wakes up.
+
 ## Engineering
 
-- **Tests:** 46 tests, about 92% coverage. Unit tests for every quality rule, using the real
+- **Tests:** 52 backend tests, about 92% coverage. Unit tests for every quality rule, using the real
   Ireland, Luxembourg, Iceland and Sweden cases as regression tests. Parser tests run on
   captured real responses. HTTP retry tests use `respx`. The **integration tests run on
   real PostgreSQL**: full pipeline, idempotent re-runs, change detection, failed-run
@@ -159,7 +211,8 @@ Running `ingest` again reports `+0 new, 0 changed`: loads are idempotent.
 - **Schema:** Alembic migrations; constraints in the database (foreign keys, `CHECK` on
   gas and on negative values outside LULUCF).
 - **Quality:** `ruff`, `mypy --strict`; CI on GitHub Actions with a PostgreSQL service
-  container, then a Docker build and smoke test.
+  container, then a Docker build and smoke test. The frontend job runs `oxlint`, 19 Vitest
+  tests and a type-checked production build.
 
 ```bash
 TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/emissions_test pytest --cov

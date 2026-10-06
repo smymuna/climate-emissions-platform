@@ -1,0 +1,427 @@
+/* Design tokens. Chart colours are validated for colour-vision deficiency in both
+   modes (see README, "Frontend"). Dark values are their own steps, not an inversion. */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --text: #0b0b0b;
+  --text-2: #52514e;
+  --muted: #6f6d68;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --accent: #1c5cab;
+  --accent-soft: #e8f0fb;
+  --good-text: #006300;
+  --bad-text: #b42323;
+  --series-1: #2a78d6; /* Eurostat */
+  --series-2: #eb6834; /* World Bank */
+  --series-3: #1baf7a; /* Our World in Data */
+  --decrease: #2a78d6;
+  --increase: #e34948;
+  --status-good: #0ca30c;
+  --status-critical: #d03b3b;
+  --status-warning: #fab219;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --text: #ffffff;
+    --text-2: #c3c2b7;
+    --muted: #9a988f;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --accent: #6da7ec;
+    --accent-soft: #1b2a3f;
+    --good-text: #0ca30c;
+    --bad-text: #e66767;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --decrease: #3987e5;
+    --increase: #e66767;
+    --shadow: none;
+  }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --text: #ffffff;
+  --text-2: #c3c2b7;
+  --muted: #9a988f;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #6da7ec;
+  --accent-soft: #1b2a3f;
+  --good-text: #0ca30c;
+  --bad-text: #e66767;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --decrease: #3987e5;
+  --increase: #e66767;
+  --shadow: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--text);
+  font: 15px/1.55 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  color: var(--accent);
+}
+button,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* header ------------------------------------------------------------------------------ */
+.top {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.top .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 56px;
+  flex-wrap: wrap;
+}
+.brand {
+  font-weight: 650;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand img {
+  width: 22px;
+  height: 22px;
+}
+.top nav {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 14px;
+}
+.icon-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  color: var(--text-2);
+}
+
+.intro {
+  padding: 28px 0 8px;
+}
+.intro h1 {
+  font-size: clamp(24px, 4vw, 32px);
+  line-height: 1.2;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+.intro p {
+  margin: 0;
+  color: var(--text-2);
+  max-width: 760px;
+}
+
+/* controls ----------------------------------------------------------------------------- */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: center;
+  padding: 20px 0;
+}
+.controls label {
+  font-size: 13px;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  min-width: 200px;
+}
+.toggle {
+  cursor: pointer;
+}
+.toggle input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+
+/* layout ------------------------------------------------------------------------------- */
+.grid {
+  display: grid;
+  gap: 16px;
+}
+.tiles {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.two {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .two {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+.card h2 {
+  font-size: 16px;
+  margin: 0 0 2px;
+}
+.card .subtitle {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.section {
+  margin-top: 16px;
+}
+
+/* stat tiles --------------------------------------------------------------------------- */
+.tile .label {
+  font-size: 13px;
+  color: var(--text-2);
+}
+.tile .value {
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1.25;
+  margin: 2px 0;
+}
+.tile .note {
+  font-size: 12px;
+  color: var(--muted);
+}
+.delta-good {
+  color: var(--good-text);
+}
+.delta-bad {
+  color: var(--bad-text);
+}
+
+/* charts ------------------------------------------------------------------------------- */
+.chart {
+  position: relative;
+}
+.chart svg {
+  display: block;
+  overflow: visible;
+}
+.chart svg:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.axis text,
+.tick {
+  fill: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.gridline {
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+.baseline {
+  stroke: var(--axis);
+  stroke-width: 1;
+}
+.end-label {
+  fill: var(--text-2);
+  font-size: 12px;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: 13px;
+  color: var(--text-2);
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.key {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
+.tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 8px 10px;
+  font-size: 12px;
+  min-width: 150px;
+  z-index: 2;
+}
+.tooltip .t-head {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.tooltip .t-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
+}
+.tooltip .t-row span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-2);
+}
+.tooltip .num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* tables ------------------------------------------------------------------------------- */
+details.table-view {
+  margin-top: 10px;
+  font-size: 13px;
+}
+details.table-view summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+.table-scroll {
+  overflow-x: auto;
+  max-height: 320px;
+  margin-top: 8px;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+th,
+td {
+  text-align: left;
+  padding: 6px 7px;
+  border-bottom: 1px solid var(--grid);
+  white-space: nowrap;
+}
+th {
+  color: var(--text-2);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+}
+td.num,
+th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+tr.selected td {
+  background: var(--accent-soft);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* states ------------------------------------------------------------------------------- */
+.banner {
+  border: 1px solid var(--border);
+  background: var(--accent-soft);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+.empty,
+.error {
+  color: var(--text-2);
+  font-size: 14px;
+  padding: 24px 0;
+}
+.error {
+  color: var(--bad-text);
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--grid) 0%, var(--surface) 50%, var(--grid) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 8px;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+footer {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 32px 0 48px;
+}
+footer p {
+  margin: 4px 0;
+}

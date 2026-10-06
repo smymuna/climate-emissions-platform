@@ -214,3 +214,22 @@ def test_api_runs_expose_quality_report(api: TestClient) -> None:
     q = runs[0]["quality"]
     assert q["steps"][0]["step"] == "missing_values"
     assert q["dropped"]["out_of_scope_country"] > 0  # World, EU-27, Kosovo
+
+
+def test_api_indicators_for_all_countries_in_a_year(api: TestClient) -> None:
+    with api:
+        latest = api.get("/v1/indicators").json()
+        y2022 = api.get("/v1/indicators", params={"year": 2022}).json()
+    assert latest["year"] == 2024
+    names = {c["country"]: c["name"] for c in y2022["countries"]}
+    assert names["DE"] == "Germany"
+    assert names["GR"] == "Greece"
+
+
+def test_cors_allows_configured_origin_only(clean_db: Engine) -> None:
+    app = create_app(Settings(cors_origins=["https://ui.example"]), engine=clean_db)
+    with TestClient(app) as client:
+        ok = client.get("/healthz", headers={"Origin": "https://ui.example"})
+        other = client.get("/healthz", headers={"Origin": "https://evil.example"})
+    assert ok.headers["access-control-allow-origin"] == "https://ui.example"
+    assert "access-control-allow-origin" not in other.headers

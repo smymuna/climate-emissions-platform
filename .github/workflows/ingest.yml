@@ -1,0 +1,42 @@
+name: Ingest
+
+# Sources publish a few times a year; a monthly refresh is plenty. Run it by hand from
+# the Actions tab after setting up a new database (it also applies migrations).
+on:
+  schedule:
+    - cron: "0 5 3 * *" # 05:00 UTC on the 3rd of each month
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EMISSIONS_DATABASE_URL: ${{ secrets.EMISSIONS_DATABASE_URL }}
+      EMISSIONS_LANDING_DIR: landing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Check the database secret is set
+        run: test -n "$EMISSIONS_DATABASE_URL" || { echo "::error::Set the EMISSIONS_DATABASE_URL repository secret"; exit 1; }
+      - run: pip install .
+      - run: emissions migrate
+      - run: emissions ingest
+      - name: Keep the raw downloads of this run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: landing-${{ github.run_id }}
+          path: landing/
+          retention-days: 30
+          if-no-files-found: ignore

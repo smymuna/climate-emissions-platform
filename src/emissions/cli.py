@@ -17,7 +17,7 @@ import httpx
 
 from emissions import __version__
 from emissions.config import Settings
-from emissions.db.repository import make_engine, sync_reference_data
+from emissions.db.repository import make_engine, normalise_db_url, sync_reference_data
 from emissions.landing import LocalLandingStore
 from emissions.pipeline import ADAPTERS, run_source
 
@@ -30,7 +30,10 @@ def migrate(settings: Settings) -> None:
 
     cfg = Config()  # migrations ship inside the package, so this also works in Docker
     cfg.set_main_option("script_location", "emissions:migrations")
-    cfg.set_main_option("sqlalchemy.url", settings.database_url)
+    # "%" must be escaped in Alembic's ini-style config (passwords can contain it).
+    cfg.set_main_option(
+        "sqlalchemy.url", normalise_db_url(settings.database_url).replace("%", "%%")
+    )
     command.upgrade(cfg, "head")
     engine = make_engine(settings.database_url)
     with engine.begin() as conn:

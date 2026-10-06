@@ -16,8 +16,20 @@ from emissions.reference import COUNTRIES, SECTORS, SOURCES
 MAX_REJECTIONS_STORED = 10_000
 
 
+def normalise_db_url(url: str) -> str:
+    """Use the psycopg 3 driver for plain postgres URLs.
+
+    Hosting providers (Neon, Render, Heroku) hand out ``postgres://`` or
+    ``postgresql://`` URLs; SQLAlchemy would pick psycopg2 for those, which isn't installed.
+    """
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix) :]
+    return url
+
+
 def make_engine(url: str) -> Engine:
-    return create_engine(url, pool_pre_ping=True, future=True)
+    return create_engine(normalise_db_url(url), pool_pre_ping=True)
 
 
 def sync_reference_data(conn: Connection) -> None:
