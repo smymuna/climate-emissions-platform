@@ -1,0 +1,42 @@
+# docker compose up --build
+#   1. starts PostgreSQL
+#   2. runs migrations, then ingests all three sources (one-off "ingest" service)
+#   3. serves the API on http://localhost:8000/docs once ingestion has finished
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: emissions
+      POSTGRES_PASSWORD: emissions
+      POSTGRES_DB: emissions
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U emissions -d emissions"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  ingest:
+    build: .
+    command: ["sh", "-c", "emissions migrate && emissions ingest"]
+    environment: &app-env
+      EMISSIONS_DATABASE_URL: postgresql+psycopg://emissions:emissions@db:5432/emissions
+    volumes:
+      - landing:/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: .
+    environment: *app-env
+    ports:
+      - "8000:8000"
+    depends_on:
+      ingest:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  landing:
