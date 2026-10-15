@@ -9,6 +9,8 @@
 normalises them, and serves standardised greenhouse gas indicators for 32 European
 countries through a REST API.**
 
+**Live:** [Dashboard](https://climate-emissions-platform.vercel.app/) · [API docs](https://climate-emissions-api.onrender.com/docs)
+
 Sources: **Eurostat** (official EU inventories, JSON-stat), the **World Bank** (EDGAR
 estimates, paginated JSON API) and **Our World in Data** (a 14 MB wide CSV). They differ
 in format, unit, country codes and method. The platform turns them into one model of
@@ -183,8 +185,8 @@ flowchart LR
 |---|---|---|
 | Database | [Neon](https://neon.tech), free plan | Connection string → secret `EMISSIONS_DATABASE_URL` |
 | Data refresh | GitHub Actions | [`.github/workflows/ingest.yml`](.github/workflows/ingest.yml): runs migrations + ingestion monthly or on demand |
-| API | [Render](https://render.com), free web service | [`render.yaml`](render.yaml) blueprint, Docker, health check on `/healthz` |
-| Frontend | [Vercel](https://vercel.com), free plan | Root directory `frontend`, env `VITE_API_URL` = the Render URL |
+| API | [Render](https://render.com), free web service — [https://climate-emissions-api.onrender.com](https://climate-emissions-api.onrender.com) | [`render.yaml`](render.yaml) blueprint, Docker, health check on `/healthz` |
+| Frontend | [Vercel](https://vercel.com), free plan — [https://climate-emissions-platform.vercel.app](https://climate-emissions-platform.vercel.app/) | Root directory `frontend`, env `VITE_API_URL` = the Render URL |
 
 Setup, in order:
 
